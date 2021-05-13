@@ -1,4 +1,7 @@
+from os import stat_result
 import sqlite3
+from prettytable import from_db_cursor
+
 
 _Tabela = "Base"
 connection = sqlite3.connect("Base.db")
@@ -10,6 +13,7 @@ cursor = connection.cursor()
 def create_table():  
     try:
         query = """CREATE TABLE IF NOT EXISTS main (
+        ID INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL, 
         password TEXT NOT NULL, 
         pomoc_pyt TEXT NOT NULL, 
@@ -39,21 +43,57 @@ def check_user(username, password):
     return False
 
 # Panel Administratora
-def dostep():
-    query = f"SELECT dostep FROM main"
+def dostep(username):
+    query = f"SELECT username, dostep FROM main"
     result = cursor.execute(query).fetchall()
 
     for row in result:
-        if dostep == row[0]:
-            return row[0]
+        permiss = "admin"
+        if username == row[0] and permiss == row[1]:
+            return True
 
-def dostep_test(username):
+    return False
+
+def dostep_admin(username):
     dostep = str(input("Dostep: \n")).lower()
     cursor.execute(f"UPDATE main SET dostep = '{dostep}' WHERE username = '{username}'")
     connection.commit()
 
-    
+# Fukcje do Admina
+def show_db():
+    cursor.execute("SELECT * FROM main")
+    table = from_db_cursor(cursor)
 
+    return table
+
+def delete_username():
+    kto = int(input("Jakie ID chcesz usunać ?\n "))
+    cursor.execute(f"DELETE FROM main WHERE ID = {kto}")
+    print("Pomyślnie usunięto użytkownika")
+    connection.commit()
+
+def change_permission():
+    
+    komu = str(input("Podaj nazwę użytkownika, któremu chcesz nadać prawa: \n"))
+    permission = str(input("Jakie prawa chcesz nadać (User, Admin) \n")).lower()
+    
+    czy_istnieje = check_username(komu)
+
+    if czy_istnieje:
+            
+        cursor.execute(f"UPDATE main SET dostep = '{permission}' WHERE username = '{komu}'")
+        connection.commit()
+        print(f"Pomyślnie zmieniono prawa dostępu na ({permission})\n")
+            
+        
+
+
+    else: 
+        print("Nie masz wystarczających środków na koncie")
+        print("Niepoprawny Username ")
+        print("Spróbuj ponownie!") 
+
+###############################################
 def waluta():
     waluty = { 
     "euro" : 4.56, 
@@ -61,6 +101,7 @@ def waluta():
     "dolar" : 3.75,
     }
     return waluty
+
 # Logowanie
 def login(): 
     choice = 1
@@ -410,15 +451,36 @@ def main():
                 print("#  5. Przewalutowanie      #")
                 print("#  6. Przelew              #")
                 print("#  7. Wyloguj              #")
+                if dostep(username) == True:
+                    print("#  9. Panel Administartora #") 
                 print("############################")
 
                 user_choice1 = int(input("Podaj Cyfrę: "))
                 
                 if user_choice1 == 9:
-                    dostep()
+                    if dostep(username) == True:
+                        
+                        print("########################################")
+                        print("#  1. Wyświetlanie DB                  #")
+                        print("#  2. Usuwanie uzytkownika (ID)        #")
+                        print("#  3. Zmiana praw dostępu              #")
+                        print("########################################")   
 
-                if user_choice1 == 0:
-                    dostep_test(username)
+                        user_choice2 = int(input("Podaj Cyfrę: "))
+
+                        if user_choice2 == 1:
+                            pokaz = show_db()
+                            print(pokaz)
+                           
+
+                        if user_choice2 == 2:
+                            delete_username()
+                            
+                        if user_choice2 == 3:
+                            change_permission()
+
+                if user_choice1 == 0: # NADAWANIE DOSTEPU 1-raz Input"admin"
+                    dostep_admin(username)
 
                 if user_choice1 == 1:                     
                     podane = show_balance(username)
