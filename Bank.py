@@ -1,6 +1,7 @@
-from os import stat_result
 import sqlite3
 from prettytable import from_db_cursor
+from requests import get
+from bs4 import BeautifulSoup 
 
 
 _Tabela = "Base"
@@ -94,13 +95,6 @@ def change_permission():
         print("Spróbuj ponownie!") 
 
 ###############################################
-def waluta():
-    waluty = { 
-    "euro" : 4.56, 
-    "funt" : 5.28,
-    "dolar" : 3.75,
-    }
-    return waluty
 
 # Logowanie
 def login(): 
@@ -308,22 +302,59 @@ def show_balance_funt(username):
 #     except:
 #         return False
 
-# Zmiana waluty 
-def change_currency(podane_pln, username, nazwa_waluty):
+# Sprawdzenie wartości walut!
+def currency():
+    link = "https://free.currconv.com"
+
+    key = "eaf0d4518b2ab38788b8"
+    URL = f"{link}/api/v7/currencies?apiKey={key}"
+    a = get(URL)
+    b = a.json()["results"].keys()
     
     try:
-        balance_1 = input("Ile chcesz wymienić(PLN)\n")
-        nazwa_waluta = str(input("Jaką walutę chcesz otrzymać?\n")).lower()
+        print("Kursy walut! Podaj skróty walut")
+
+
+        PLN = input("Podaj 1-szą walute (SKRÓT NAZWY 'ex.PLN > USD'\n=>").upper()
+        nazwa_waluta = input("Podaj 2-gą walute (SKRÓT NAZWY 'ex.PLN > USD'\n=>").upper()
+        if PLN and nazwa_waluta in b:
+            URL = f"{link}/api/v7/convert?q={PLN}_{nazwa_waluta}&compact=ultra&apiKey={key}"
+            page = get(URL)
+            q = page.json()
+            w = q[f"{PLN}_{nazwa_waluta}"]
+            print(f"Zamiana (1) {PLN} na (1) {nazwa_waluta} to: ", w)
+        else:
+            raise Exception()
+    except:
+        print("Został podany zły skrót, Spróbuj ponownie!")
+
+
+
+# Zmiana waluty 
+def change_currency(podane_pln, username):
+    
+    try:
+        balance_1 = input("Ile chcesz wymienić(PLN)\n=> ")
+        curr1 = "PLN"
+        nazwa_waluta = input("Na jaka chcesz zamienić(SKRÓT NAZWY 'ex.Euro = EUR'\n=> ").upper()
+        link = "https://free.currconv.com"
+
+        key = "eaf0d4518b2ab38788b8"
+        URL = f"{link}/api/v7/convert?q={nazwa_waluta}_{curr1}&compact=ultra&apiKey={key}"
+        page = get(URL)
+        q = page.json()
+        w = q[f"{nazwa_waluta}_{curr1}"]
+
 
         if balance_1 == 0:
             print("Powrót do Menu")
             return True
         else:
             balance_1 = int(balance_1)
-            if balance_1 >= 1 and nazwa_waluta == "euro":
+            if balance_1 >= 1 and nazwa_waluta == "EUR":
                 odejmowanie_kwoty = podane_pln - balance_1
                 suma = show_balance_euro(username)
-                dodawanie_walut = suma + balance_1 / nazwa_waluty[nazwa_waluta]
+                dodawanie_walut = suma + balance_1 / w
                 dodawanie_walut = "{:.2f}".format(dodawanie_walut)
                 
                 if podane_pln >= balance_1:
@@ -334,10 +365,10 @@ def change_currency(podane_pln, username, nazwa_waluty):
                 else:
                     print("Nie masz wystarczająco środków")
 
-            elif balance_1 >= 1 and nazwa_waluta == "dolar":
+            elif balance_1 >= 1 and nazwa_waluta == "USD":
                 odejmowanie_kwoty = podane_pln - balance_1
                 suma = show_balance_dolar(username)
-                dodawanie_walut = suma + balance_1 / nazwa_waluty[nazwa_waluta]
+                dodawanie_walut = suma + balance_1 / w
                 dodawanie_walut = "{:.2f}".format(dodawanie_walut)
 
                 if podane_pln >= balance_1:
@@ -348,10 +379,10 @@ def change_currency(podane_pln, username, nazwa_waluty):
                 else:
                     print("Nie masz wystarczająco środków")
 
-            elif balance_1 >= 1 and nazwa_waluta == "funt":
+            elif balance_1 >= 1 and nazwa_waluta == "GBP":
                 odejmowanie_kwoty = podane_pln - balance_1
                 suma = show_balance_funt(username)
-                dodawanie_walut = suma + balance_1 / nazwa_waluty[nazwa_waluta] 
+                dodawanie_walut = suma + balance_1 / w
                 dodawanie_walut = "{:.2f}".format(dodawanie_walut)
 
                 if podane_pln >= balance_1:
@@ -363,7 +394,7 @@ def change_currency(podane_pln, username, nazwa_waluty):
                     print("Nie masz wystarczająco środków")
 
             else:
-                print("Nie masz wystarczających środków")
+                print("Został podany zły skrót")
 
     except:
         return False
@@ -450,7 +481,8 @@ def main():
                 print("#  4. Zmiana hasła         #")
                 print("#  5. Przewalutowanie      #")
                 print("#  6. Przelew              #")
-                print("#  7. Wyloguj              #")
+                print("#  7. Sprawdz kursy walut  #")
+                print("#  8. Wyloguj              #")
                 if dostep(username) == True:
                     print("#  9. Panel Administartora #") 
                 print("############################")
@@ -510,15 +542,17 @@ def main():
                     password = change_password(username)
 
                 if user_choice1 == 5:
-                    nazwa_waluty = waluta()
                     podane_pln = show_balance(username)
-                    change_currency(podane_pln, username, nazwa_waluty)
+                    change_currency(podane_pln, username)
 
                 if user_choice1 == 6:
                     podane_pln = show_balance(username)
                     transfer(username, podane_pln)
 
                 if user_choice1 == 7:
+                    currency()
+
+                if user_choice1 == 8:
                     print("")
                     print("Wylogowano!")
                     print("")
