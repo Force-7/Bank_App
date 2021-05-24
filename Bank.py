@@ -2,7 +2,9 @@ import sqlite3
 from prettytable import from_db_cursor
 from requests import get
 from bs4 import BeautifulSoup 
-
+from time import sleep
+from os import get_terminal_size
+from classes.pasek import Pasek
 
 _Tabela = "Base"
 connection = sqlite3.connect("Base.db")
@@ -450,6 +452,16 @@ def transfer(username, podane_pln):
     except:
         return False
 
+def loading():
+    print("Wykonywanie operacji, proszę czekać")
+    szerokosc = get_terminal_size()[0]
+
+    pasek = Pasek(szerokosc=szerokosc/2)
+    for i in range(50):
+        pasek.dalej(procent=i/50)
+        sleep(0.02)
+    pasek.koniec()
+
 ######################################################
 # Main
 def main():
@@ -470,10 +482,10 @@ def main():
        
         if user_choice == 1:
             username = login()
-            
+            loading()
             while True:
                 
-
+                print("")
                 print("############################")
                 print("#  1. Wpłata pieniędzy     #")
                 print("#  2. Wypłata pieniedzy    #")
@@ -491,7 +503,7 @@ def main():
                 
                 if user_choice1 == 9:
                     if dostep(username) == True:
-                        
+                        print("")
                         print("########################################")
                         print("#  1. Wyświetlanie DB                  #")
                         print("#  2. Usuwanie uzytkownika (ID)        #")
@@ -503,34 +515,35 @@ def main():
                         if user_choice2 == 1:
                             pokaz = show_db()
                             print(pokaz)
-                           
+                            loading()
 
                         if user_choice2 == 2:
                             delete_username()
-                            
+                            loading()
                         if user_choice2 == 3:
                             change_permission()
-
+                            loading()
                 if user_choice1 == 0: # NADAWANIE DOSTEPU 1-raz Input"admin"
                     dostep_admin(username)
 
                 if user_choice1 == 1:                     
                     podane = show_balance(username)
                     add_balance(podane, username)
-        
+                    loading()
 
 
                 if user_choice1 == 2:
                         podane = show_balance(username)
                         withdraw(podane, username)
-                        
+                        loading()
 
                 if user_choice1 == 3:
                     balance = show_balance(username)
                     balance_euro = show_balance_euro(username)
                     balance_dolar = show_balance_dolar(username)
                     balance_funt = show_balance_funt(username)
-
+                    loading()
+                    print("")
                     print("##########################")
                     print("# Twój stan konta(PLN): ", balance)
                     print("# Twój stan konta(Euro): ", balance_euro)
@@ -540,19 +553,21 @@ def main():
 
                 if user_choice1 == 4:
                     password = change_password(username)
-
+                    loading()
                 if user_choice1 == 5:
                     podane_pln = show_balance(username)
                     change_currency(podane_pln, username)
-
+                    loading()
                 if user_choice1 == 6:
                     podane_pln = show_balance(username)
                     transfer(username, podane_pln)
-
+                    loading()
                 if user_choice1 == 7:
                     currency()
-
+                    loading()
                 if user_choice1 == 8:
+                    loading()
+                    print("")
                     print("")
                     print("Wylogowano!")
                     print("")
@@ -563,9 +578,9 @@ def main():
         if user_choice == 2:
             registration()
 
-
         if user_choice == 3:
             while True:
+                print("")
                 print("##### Przypomnienie ########")
                 print("#  1. Przypomnienie hasła  #")
                 print("#  2. Przypomnienie nazwy  #")
@@ -578,18 +593,19 @@ def main():
                     username = input("Podaj Username: ")
                     pomoc_pyt = show_pomoc_pyt(username)
                     przypomnienie_hasla(pomoc_pyt, username)
-
+                    loading()
                 if user_choice2 == 2:
                     password = input("Podaj Hasło: ")
                     a = show_pomoc_pyt_password(password)
                     przypomnienie_username(a, password)
-
+                    loading()
 
                 if user_choice2 == 3:
                     break
 
         if user_choice == 4:
-            print("Wyłączanie aplikacji")
+            loading()
+            print("Aplikacja wyłączona")
             connection.close()
             break
 
